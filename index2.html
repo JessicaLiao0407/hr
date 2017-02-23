@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>HR</title>
+    <script src="https://d3js.org/d3.v3.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <style>
+        body {
+            background: #eee;
+        }
+        
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: auto;
+        }
+        
+        .axis text {
+            font-size: 12px;
+        }
+        
+        #tooltip {
+            position: absolute;
+            left: 10px;
+            top: 20px;
+            background: #fff;
+            width: 150px;
+            height: auto;
+            padding: 0px 10px;
+            border-radius: 5px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        #tooltip.hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!--   動態標籤-->
+    <div id="tooltip" class="hidden">
+        <p><strong id="number_project">Hello</strong></p>
+        <p id="time_spend_company">tooltip</p>
+    </div>
+    <div id="btn"> </div>
+    <script>
+        var w = 900;
+        var h = 600;
+        var padding = 90;
+        var letterList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+        svg();
+        d3.csv("./HR_comma_sep.csv", function (dataSet) {
+            bind(dataSet);
+            render(dataSet);
+            btnList(dataSet);
+        });
+
+        function svg() {
+            d3.select("body").append("svg").attr({
+                width: w
+                , height: h
+            });
+            d3.select("svg").append("g").append("rect").attr({
+                width: "100%"
+                , height: "100%"
+                , fill: "white"
+            });
+            d3.select("svg").append("g").attr("id", "axisX");
+            d3.select("svg").append("g").attr("id", "axisY");
+            d3.select("svg").append("text").attr({
+                x: (w - padding * 2) / 2
+                , y: h - padding / 4
+                , "font-size": "20px"
+            }).text("last_evaluation");
+            d3.select("svg").append("text").attr({
+                class: "vertical-text"
+                , x: padding / 2
+                , y: h / 2
+                , "font-size": "20px"
+                    //, "transform": rotate(90 deg);;
+            }).text("satisfaction_level");
+        }
+
+        function bind(dataSet) {
+            var selection = d3.select("svg").selectAll("circle").data(dataSet);
+            selection.enter().append("circle");
+            selection.exit().remove();
+        }
+
+        function render(dataSet) {
+            //比例尺們 xScale, yScale, rScale, fScale
+            var xScale = d3.scale.linear().domain([d3.min(dataSet, function (d) {
+                return +d.satisfaction_level;
+            }), d3.max(dataSet, function (d) {
+                return +d.satisfaction_level;
+            })]).range([padding, w - padding]);
+            var yScale = d3.scale.linear().domain([d3.min(dataSet, function (d) {
+                return +d.last_evaluation;
+            }), d3.max(dataSet, function (d) {
+                return +d.last_evaluation;
+            })]).range([h - padding, padding]);
+            var rScale = d3.scale.linear().domain([d3.min(dataSet, function (d) {
+                return +d.average_montly_hours;
+            }), d3.max(dataSet, function (d) {
+                return +d.average_montly_hours;
+            })]).range([0, 10]);
+            var fScale = d3.scale.category20();
+            //開始畫圈圈
+            d3.selectAll("circle").transition().attr({
+                cx: function (d) {
+                    return xScale(+d.satisfaction_level);
+                }
+                , cy: function (d) {
+                    return yScale(+d.last_evaluation);
+                }
+                , r: function (d) {
+                    return rScale(+d.average_montly_hours);
+                }
+                , fill: function (d) {
+                    return fScale(letterList.indexOf(d.number_project));
+                }
+            });
+            d3.selectAll("circle").on("mouseover", function (d) {
+                var cx = d3.select(this).attr("cx");
+                console.log(cx);
+                var cy = d3.select(this).attr("cy");
+                console.log(cy);
+                var tooltip = d3.select("#tooltip").style({
+                    left: (+cx + 10) + "px"
+                    , top: (+cy + 10) + "px"
+                });
+                //替換toolip內容(選擇其id後，修改內容)
+                tooltip.select("#number_project").text("number_project:" + d.number_project);
+                tooltip.select("#time_spend_company").text("time_spend_company:" + d.time_spend_company);
+                d3.select("#tooltip").classed("hidden", false);
+            }).on("mouseout", function (d) {
+                d3.select("#tooltip").classed("hidden", true);
+            });
+            //開始畫x,y軸線 
+            var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+            var yAxis = d3.svg.axis().scale(yScale).orient("left");
+            d3.select("svg").select("g#axisY").attr("class", "axis").attr("transform", "translate(" + (padding - 10) + ",0)").call(yAxis);
+            d3.select("svg").select("g#axisX").attr("class", "axis").attr("transform", "translate(0," + (h - padding + 10) + ")").call(xAxis);
+        }
+
+        function btnList(dataSet) {
+            //industryArr: 行業別陣列(包含重複項目)           
+            var salesArr = dataSet.map(function (d) {
+                return d.sales;
+            });
+            //uniqueIndustryArr: 行業別陣列(無重複項目) 
+            var uniqueSalesArr = unique(salesArr);
+            //filterIndustryArr: 行業別陣列(去除空白項目) 
+            var filterSalesArr = uniqueSalesArr.filter(function (d) {
+                return d != "";
+            });
+            //畫出按鈕們
+            var selection = d3.select("#btn").append("div").append("select").selectAll("option").data(filterSalesArr);
+            selection.enter().append("option").property({
+                value: function (d) {
+                    return d;
+                }
+            }).text(function (d) {
+                return d;
+            });
+            d3.select("select").on("change", function (d) {
+                var value = d3.select("select").property("value");
+                update(value);
+            });
+
+            function update(salesName) {
+                //過濾行業別符合者
+                var newDataSet = dataSet.filter(function (d) {
+                    return d.sales === salesName;
+                });
+                //重新整理bind,render
+                bind(newDataSet);
+                render(newDataSet);
+            }
+
+            function unique(array) {
+                var n = [];
+                for (var i = 0; i < array.length; i++) {
+                    if (n.indexOf(array[i]) == -1) {
+                        n.push(array[i]);
+                    }
+                }
+                return n;
+            }
+        }
+    </script>
+    <hr>
+    <div style="display:inline-block;" id="legend"></div>
+    <div style="display:inline-block; float:left" id="container"></div>
+    <script src="main.js"></script>
+    <script>
+        var correlationMatrix = [
+[1.00, 0.11, -0.14, -0.02, -0.10, 0.06, -0.39, 0.03]
+, [0.11, 1.00, 0.35, 0.34, 0.13, -0.01, 0.01, -0.01]
+, [-0.14, 0.35, 1.00, 0.42, 0.20, 0.00, 0.02, -0.01]
+, [-0.02, 0.34, 0.42, 1.00, 0.13, -0.01, 0.07, 0.00]
+, [-0.10, 0.13, 0.20, 0.13, 1.00, 0.00, 0.14, 0.07]
+, [0.06, -0.01, 0.00, -0.01, 0.00, 1.00, -0.15, 0.04]
+, [-0.39, 0.01, 0.02, 0.07, 0.14, -0.15, 1.00, -0.06]
+, [0.03, -0.01, -0.01, 0.00, 0.07, 0.04, -0.06, 1.00]
+    ];
+        var labels = ['satisfaction_level', 'last_evaluation', 'number_project', 'average_montly_hours', 'time_spend_company', 'Work_accident', 'left', 'promotion_last_5years'];
+        Matrix({
+            container: '#container'
+            , data: correlationMatrix
+            , labels: labels
+            , start_color: '#ffffff'
+            , end_color: '#3498db'
+        });
+    </script>
+</body>
+
+</html>
