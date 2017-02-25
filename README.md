@@ -5,8 +5,10 @@ Why are our best and most experienced employees leaving prematurely?
 
 https://www.kaggle.com/ludobenistant/hr-analytics
 
+
 二、資料分析
 用Simple Correlation Matrix找到最相關的變數
+
 
 三、資料視覺化
 將最重要的變數挑選出來當作泡泡圖的維度
