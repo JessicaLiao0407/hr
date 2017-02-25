@@ -80,9 +80,9 @@
                 class: "vertical-text"
                 , x: padding / 2
                 , y: h / 2
-                , "font-size": "20px";
-                
-            }).attr("transform","translate(300,100) rotate(90)").text("satisfaction_level");
+                , "font-size": "20px"
+                    //, "transform": rotate(90 deg);;
+            }).attr("transform", "translate(300,150) rotate(90)").text("satisfaction_level");
         }
 
         function bind(dataSet) {
@@ -215,6 +215,7 @@
             , labels: labels
             , start_color: '#ffffff'
             , end_color: '#3498db'
+            , "font-size": 12
         });
     </script>
 </body>
