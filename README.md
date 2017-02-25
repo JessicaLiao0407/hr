@@ -9,6 +9,8 @@ https://www.kaggle.com/ludobenistant/hr-analytics
 二、資料分析
 用Simple Correlation Matrix找到最相關的變數
 
+https://bl.ocks.org/arpitnarechania/caeba2e6579900ea12cb2a4eb157ce74
+
 
 三、資料視覺化
 將最重要的變數挑選出來當作泡泡圖的維度
